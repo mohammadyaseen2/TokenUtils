@@ -1,4 +1,4 @@
-package services
+package jwt
 
 import (
 	"crypto/rand"
@@ -7,10 +7,11 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"token-utils/models"
+
+	"github.com/mohammadyaseen2/TokenUtils/model"
 )
 
-func MakeKeyPair(bits int) (*models.KeyPair, error) {
+func MakeKeyPair(bits int) (*model.KeyPair, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Cannot generate RSA key: %s", err))
@@ -34,7 +35,7 @@ func MakeKeyPair(bits int) (*models.KeyPair, error) {
 		Type:  "PUBLIC KEY",
 		Bytes: publicKeyBytes,
 	}
-	return &models.KeyPair{
+	return &model.KeyPair{
 		PrivateKey: pem.EncodeToMemory(privateKeyBlock),
 		PublicKey:  pem.EncodeToMemory(publicKeyBlock),
 	}, nil
