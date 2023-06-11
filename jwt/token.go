@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"log"
 	"time"
 
@@ -34,15 +35,13 @@ func NewValidator(publicKey []byte) *JWTValidator {
 	}
 }
 
-func (j *JWT) GenerateToken(claims *model.JwtClaims, expirationTime time.Time) (string, error) {
+func (j *JWT) GenerateToken(payload *model.Payload) (string, error) {
 	key, err := jwt.ParseRSAPrivateKeyFromPEM(j.privateKey)
 	if err != nil {
 		return "", fmt.Errorf("create: parse key: %w", err)
 	}
 
-	claims.ExpiresAt = expirationTime.Unix()
-	claims.IssuedAt = time.Now().UTC().Unix()
-	token, err := jwt.NewWithClaims(&j.SigningMethod, claims).SignedString(key)
+	token, err := jwt.NewWithClaims(&j.SigningMethod, payload).SignedString(key)
 	if err != nil {
 		return "", fmt.Errorf("create: sign token: %w", err)
 	}
@@ -51,37 +50,40 @@ func (j *JWT) GenerateToken(claims *model.JwtClaims, expirationTime time.Time) (
 }
 
 func (j *JWT) GetToken(payload string, expiryTime time.Duration) (string, error) {
-	var claims model.JwtClaims
+	var p model.Payload
 
-	if err := json.Unmarshal([]byte(payload), &claims); err != nil {
+	if err := json.Unmarshal([]byte(payload), &p); err != nil {
 		log.Fatal(err)
 	}
 
-	var tokenCreationTime = time.Now().UTC()
-	return j.GenerateToken(&claims, tokenCreationTime.Add(expiryTime))
+	p.ID = uuid.New()
+	p.IssuedAt = time.Now().UTC().Unix()
+	p.ExpiresAt = time.Now().Add(expiryTime).UTC().Unix()
+
+	return j.GenerateToken(&p)
 }
 
-func (j *JWTValidator) ValidateToken(tokenString string) (*model.JwtClaims, error) {
+func (j *JWTValidator) ValidateToken(tokenString string) (*model.Payload, error) {
 	key, err := jwt.ParseRSAPublicKeyFromPEM(j.publicKey)
 	if err != nil {
 		return nil, fmt.Errorf("verify: parse key: %w", err)
 	}
 
-	claims := &model.JwtClaims{}
-	token, err := getTokenFromString(tokenString, claims, key)
+	payload := &model.Payload{}
+	token, err := getTokenFromString(tokenString, payload, key)
 
 	if err != nil {
 		return nil, fmt.Errorf("verify: %w", err)
 	}
 
 	if token.Valid {
-		return claims, nil
+		return payload, nil
 	}
 	return nil, fmt.Errorf("verify: invalid")
 }
 
-func getTokenFromString(tokenString string, claims *model.JwtClaims, key *rsa.PublicKey) (*jwt.Token, error) {
-	return jwt.ParseWithClaims(tokenString, claims, func(jwtToken *jwt.Token) (interface{}, error) {
+func getTokenFromString(tokenString string, payload *model.Payload, key *rsa.PublicKey) (*jwt.Token, error) {
+	return jwt.ParseWithClaims(tokenString, payload, func(jwtToken *jwt.Token) (interface{}, error) {
 		if _, ok := jwtToken.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected method: %s", jwtToken.Header["alg"])
 		}
