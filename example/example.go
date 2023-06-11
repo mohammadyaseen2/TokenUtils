@@ -41,5 +41,5 @@ func ExampleMain() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println("CONTENT:", content.Payload)
+	fmt.Println("CONTENT:", content)
 }
