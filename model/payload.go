@@ -10,16 +10,17 @@ type Payload struct {
 	ID       uuid.UUID `json:"id"`
 	Username string    `json:"username"`
 	Roles    []string  `json:"roles"`
+	Extra    Extra     `json:"extra"`
 	jwt.StandardClaims
-	Extra
 }
 
 // NewPayload creates a new token payload with a specific username and duration
-func NewPayload(username string, duration time.Duration, extra Extra) (*Payload, error) {
+func NewPayload(username string, roles []string, duration time.Duration, extra Extra) (*Payload, error) {
 	tokenID := uuid.New()
 	payload := &Payload{
 		ID:       tokenID,
 		Username: username,
+		Roles:    roles,
 		Extra:    extra,
 	}
 
