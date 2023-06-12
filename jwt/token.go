@@ -14,7 +14,6 @@ import (
 
 type JWT struct {
 	privateKey    []byte
-	publicKey     []byte
 	SigningMethod jwt.SigningMethodRSA
 }
 
@@ -22,10 +21,9 @@ type JWTValidator struct {
 	publicKey []byte
 }
 
-func New(privateKey []byte, publicKey []byte, signingMethod jwt.SigningMethodRSA) *JWT {
+func New(privateKey []byte, signingMethod jwt.SigningMethodRSA) *JWT {
 	return &JWT{
 		privateKey:    privateKey,
-		publicKey:     publicKey,
 		SigningMethod: signingMethod,
 	}
 }
